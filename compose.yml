@@ -1,0 +1,70 @@
+x-timezone: &timezone
+  TZ: Europe/Rome
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    environment:
+      <<: *timezone
+      PORT: 8080
+      DATABASE_URL: postgres://${POSTGRES_USER:-barman}:${POSTGRES_PASSWORD:-barman}@postgres:5432/${POSTGRES_DB:-barman}?sslmode=disable
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    environment:
+      <<: *timezone
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      <<: *timezone
+      POSTGRES_USER: ${POSTGRES_USER:-barman}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-barman}
+      POSTGRES_DB: ${POSTGRES_DB:-barman}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-barman}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    environment:
+      <<: *timezone
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  caddy_data:
+  caddy_config:
+

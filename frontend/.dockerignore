@@ -1,0 +1,17 @@
+**/node_modules
+**/.next
+**/.git
+**/.gitignore
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/.pnpm-debug.log*
+**/coverage
+**/.env*
+**/.vercel
+**/*.tsbuildinfo
+**/README.md
+**/AGENTS.md
+**/CLAUDE.md
+Dockerfile
+.dockerignore
