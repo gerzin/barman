@@ -26,10 +26,11 @@ type User struct {
 }
 
 var (
-	ErrUserNotFound   = errors.New("user not found")
-	ErrInvalidRole    = errors.New("invalid role")
-	ErrDuplicateEmail = errors.New("email already exists")
-	ErrInvalidEmail   = errors.New("invalid email format")
-	ErrInvalidName    = errors.New("invalid name format")
-	ErrInvalidSurname = errors.New("invalid surname format")
+	ErrUserNotFound       = errors.New("user not found")
+	ErrInvalidRole        = errors.New("invalid role")
+	ErrDuplicateEmail     = errors.New("email already exists")
+	ErrInvalidEmail       = errors.New("invalid email format")
+	ErrInvalidName        = errors.New("invalid name format")
+	ErrInvalidSurname     = errors.New("invalid surname format")
+	ErrInvalidCredentials = errors.New("invalid email or password")
 )

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net/http"
 
+	"barman/internal/auth"
 	"barman/internal/domain"
 	"barman/internal/service"
 
@@ -36,11 +37,38 @@ func (h *UserHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
+// createUserRequest is bound separately from domain.User because the
+// password hash must never be settable directly from the request body -
+// only a plaintext password comes in, and it's hashed before storage.
+type createUserRequest struct {
+	Name     string      `json:"name" binding:"required"`
+	Surname  string      `json:"surname" binding:"required"`
+	Email    string      `json:"email" binding:"required,email"`
+	Phone    string      `json:"phone"`
+	Password string      `json:"password" binding:"required,min=8"`
+	Role     domain.Role `json:"role" binding:"required"`
+}
+
 func (h *UserHandler) Create(c *gin.Context) {
-	var user domain.User
-	if err := c.ShouldBindJSON(&user); err != nil {
+	var req createUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	hash, err := auth.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process password"})
+		return
+	}
+
+	user := domain.User{
+		Name:         req.Name,
+		Surname:      req.Surname,
+		Email:        req.Email,
+		Phone:        req.Phone,
+		Role:         req.Role,
+		PasswordHash: hash,
 	}
 
 	if err := h.service.CreateUser(c.Request.Context(), &user); err != nil {
