@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import {
     Dialog,
@@ -80,6 +80,10 @@ function ProductDialog({
     })
 
     const available = watch("available")
+    const sectionId = watch("section_id")
+    const sectionLabel = sectionId
+        ? (sections.find((s) => s.id === sectionId)?.name ?? "No section")
+        : "No section"
 
     function onSubmit(values: ProductValues) {
         startTransition(async () => {
@@ -134,7 +138,8 @@ function ProductDialog({
                             onValueChange={(v) => setValue("section_id", v === "none" ? null : v)}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="No section" />
+                                {/* SelectValue can't resolve text before dropdown opens; resolve name manually */}
+                                <span>{sectionLabel}</span>
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="none">No section</SelectItem>

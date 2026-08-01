@@ -55,8 +55,8 @@ func (r *UserPostgresRepository) GetByEmail(ctx context.Context, email string) (
 }
 
 func (r *UserPostgresRepository) Update(ctx context.Context, user *domain.User) error {
-	query := `UPDATE users SET email = $1, name = $2, surname = $3, phone = $4, password_hash = $5, role = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7`
-	_, err := r.db.Exec(ctx, query, user.Email, user.Name, user.Surname, user.Phone, user.PasswordHash, user.Role, user.ID)
+	query := `UPDATE users SET email = $1, name = $2, surname = $3, phone = $4, role = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6`
+	_, err := r.db.Exec(ctx, query, user.Email, user.Name, user.Surname, user.Phone, user.Role, user.ID)
 	if err != nil {
 		return err
 	}

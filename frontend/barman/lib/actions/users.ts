@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { getToken } from "@/lib/session"
-import { createUser, deleteUser, type CreateUserInput } from "@/lib/api/users"
+import { createUser, deleteUser, updateUser, type CreateUserInput, type UpdateUserInput } from "@/lib/api/users"
 
 export async function createUserAction(input: CreateUserInput) {
     const token = await getToken()
@@ -11,6 +11,17 @@ export async function createUserAction(input: CreateUserInput) {
         await createUser(input, token)
     } catch (err) {
         return { error: err instanceof Error ? err.message : "Failed to create user" }
+    }
+    revalidatePath("/management/users")
+}
+
+export async function updateUserAction(id: string, input: UpdateUserInput) {
+    const token = await getToken()
+    if (!token) return { error: "Not authenticated" }
+    try {
+        await updateUser(id, input, token)
+    } catch (err) {
+        return { error: err instanceof Error ? err.message : "Failed to update user" }
     }
     revalidatePath("/management/users")
 }

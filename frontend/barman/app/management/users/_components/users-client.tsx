@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { User } from "@/lib/api/types"
-import { createUserAction, deleteUserAction } from "@/lib/actions/users"
+import { createUserAction, updateUserAction, deleteUserAction } from "@/lib/actions/users"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -41,7 +41,16 @@ const createUserSchema = z.object({
     role: z.enum(["admin", "employee"]),
 })
 
+const editUserSchema = z.object({
+    name: z.string().min(1, "Required"),
+    surname: z.string().min(1, "Required"),
+    email: z.string().email("Invalid email"),
+    phone: z.string().optional(),
+    role: z.enum(["admin", "employee"]),
+})
+
 type CreateUserValues = z.infer<typeof createUserSchema>
+type EditUserValues = z.infer<typeof editUserSchema>
 
 function CreateUserDialog() {
     const [open, setOpen] = useState(false)
@@ -119,6 +128,85 @@ function CreateUserDialog() {
     )
 }
 
+function EditUserDialog({ user }: { user: User }) {
+    const [open, setOpen] = useState(false)
+    const [isPending, startTransition] = useTransition()
+    const { register, handleSubmit, setValue, formState: { errors } } = useForm<EditUserValues>({
+        resolver: zodResolver(editUserSchema),
+        defaultValues: {
+            name: user.name,
+            surname: user.surname,
+            email: user.email,
+            phone: user.phone,
+            role: user.role as "admin" | "employee",
+        },
+    })
+
+    function onSubmit(values: EditUserValues) {
+        startTransition(async () => {
+            const result = await updateUserAction(user.id, values)
+            if (result?.error) {
+                toast.error(result.error)
+            } else {
+                toast.success("User updated")
+                setOpen(false)
+            }
+        })
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger render={(props) => <Button {...props} variant="ghost" size="sm">Edit</Button>} />
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Edit user</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-1.5">
+                            <Label htmlFor="e-name">Name</Label>
+                            <Input id="e-name" {...register("name")} />
+                            {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <Label htmlFor="e-surname">Surname</Label>
+                            <Input id="e-surname" {...register("surname")} />
+                            {errors.surname && <p className="text-xs text-destructive">{errors.surname.message}</p>}
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="e-email">Email</Label>
+                        <Input id="e-email" type="email" {...register("email")} />
+                        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="e-phone">Phone (optional)</Label>
+                        <Input id="e-phone" {...register("phone")} />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <Label>Role</Label>
+                        <Select
+                            defaultValue={user.role}
+                            onValueChange={(v) => setValue("role", v as "admin" | "employee")}
+                        >
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="employee">Employee</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <Button type="submit" disabled={isPending}>
+                        {isPending ? "Saving…" : "Save"}
+                    </Button>
+                </form>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 function DeleteUserButton({ user }: { user: User }) {
     const [isPending, startTransition] = useTransition()
 
@@ -172,7 +260,7 @@ export function UsersClient({ users }: { users: User[] }) {
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Role</TableHead>
-                            <TableHead className="w-16" />
+                            <TableHead className="w-28" />
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -195,7 +283,10 @@ export function UsersClient({ users }: { users: User[] }) {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <DeleteUserButton user={user} />
+                                        <div className="flex justify-end">
+                                            <EditUserDialog user={user} />
+                                            <DeleteUserButton user={user} />
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))
