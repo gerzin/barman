@@ -25,6 +25,7 @@ type Order struct {
 	ProductName string    `json:"product_name"`
 	UnitPrice   float64   `json:"unit_price"`
 	Quantity    int       `json:"quantity"`
+	Paid        bool      `json:"paid"`
 	Note        string    `json:"note,omitempty"`
 	CreatedBy   *string   `json:"created_by,omitempty"`
 	CreatedAt   time.Time `json:"created_at"`

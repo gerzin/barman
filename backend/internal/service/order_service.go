@@ -75,8 +75,8 @@ func (s *OrderService) AddOrder(ctx context.Context, tableID string, productID *
 	return order, nil
 }
 
-// UpdateOrder changes the quantity and/or note of an existing line item.
-func (s *OrderService) UpdateOrder(ctx context.Context, orderID string, quantity int, note string, performedBy *string) (*domain.Order, error) {
+// UpdateOrder changes the quantity, note, and/or paid status of an existing line item.
+func (s *OrderService) UpdateOrder(ctx context.Context, orderID string, quantity int, note string, paid *bool, performedBy *string) (*domain.Order, error) {
 	if quantity <= 0 {
 		return nil, domain.ErrInvalidQuantity
 	}
@@ -96,6 +96,9 @@ func (s *OrderService) UpdateOrder(ctx context.Context, orderID string, quantity
 
 	order.Quantity = quantity
 	order.Note = note
+	if paid != nil {
+		order.Paid = *paid
+	}
 	if err := s.orderRepo.Update(ctx, order); err != nil {
 		return nil, err
 	}

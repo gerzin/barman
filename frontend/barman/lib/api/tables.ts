@@ -56,7 +56,7 @@ export function addOrder(tableId: string, input: OrderInput, token: string): Pro
 /** Mirrors PUT /api/v1/orders/:orderID. */
 export function updateOrder(
     orderId: string,
-    input: { quantity: number; note?: string },
+    input: { quantity: number; note?: string; paid?: boolean },
     token: string
 ): Promise<Order> {
     return apiFetch<Order>(`/api/v1/orders/${orderId}`, { method: "PUT", body: input, token })

@@ -9,18 +9,18 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
                 <div className="mx-auto flex max-w-3xl items-center justify-between">
                     <nav className="flex gap-6">
                         <Link href="/management/tables" className="text-sm font-medium hover:underline">
-                            Tables
+                            Tavoli
                         </Link>
                         <Link href="/management/menu" className="text-sm font-medium hover:underline">
                             Menu
                         </Link>
                         <Link href="/management/users" className="text-sm font-medium hover:underline">
-                            Users
+                            Utenti
                         </Link>
                     </nav>
                     <form action={logoutAction}>
                         <button type="submit" className="text-sm text-muted-foreground hover:text-foreground">
-                            Logout
+                            Esci
                         </button>
                     </form>
                 </div>

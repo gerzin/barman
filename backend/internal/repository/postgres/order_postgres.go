@@ -20,10 +20,10 @@ func NewOrderPostgresRepository(db *pgxpool.Pool) *OrderPostgresRepository {
 func (r *OrderPostgresRepository) Create(ctx context.Context, order *domain.Order) error {
 	query := `INSERT INTO orders (table_id, product_id, product_name, unit_price, quantity, note, created_by)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		RETURNING id, created_at, updated_at`
+		RETURNING id, paid, created_at, updated_at`
 	err := r.db.QueryRow(ctx, query,
 		order.TableID, order.ProductID, order.ProductName, order.UnitPrice, order.Quantity, order.Note, order.CreatedBy,
-	).Scan(&order.ID, &order.CreatedAt, &order.UpdatedAt)
+	).Scan(&order.ID, &order.Paid, &order.CreatedAt, &order.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create order: %w", err)
 	}
@@ -31,12 +31,12 @@ func (r *OrderPostgresRepository) Create(ctx context.Context, order *domain.Orde
 }
 
 func (r *OrderPostgresRepository) GetByID(ctx context.Context, id string) (*domain.Order, error) {
-	query := `SELECT id, table_id, product_id, product_name, unit_price, quantity, note, created_by, created_at, updated_at
+	query := `SELECT id, table_id, product_id, product_name, unit_price, quantity, paid, note, created_by, created_at, updated_at
 		FROM orders WHERE id = $1`
 	row := r.db.QueryRow(ctx, query, id)
 
 	var order domain.Order
-	err := row.Scan(&order.ID, &order.TableID, &order.ProductID, &order.ProductName, &order.UnitPrice, &order.Quantity, &order.Note, &order.CreatedBy, &order.CreatedAt, &order.UpdatedAt)
+	err := row.Scan(&order.ID, &order.TableID, &order.ProductID, &order.ProductName, &order.UnitPrice, &order.Quantity, &order.Paid, &order.Note, &order.CreatedBy, &order.CreatedAt, &order.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get order by ID: %w", err)
 	}
@@ -45,8 +45,8 @@ func (r *OrderPostgresRepository) GetByID(ctx context.Context, id string) (*doma
 }
 
 func (r *OrderPostgresRepository) Update(ctx context.Context, order *domain.Order) error {
-	query := `UPDATE orders SET quantity = $1, note = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3`
-	_, err := r.db.Exec(ctx, query, order.Quantity, order.Note, order.ID)
+	query := `UPDATE orders SET quantity = $1, note = $2, paid = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4`
+	_, err := r.db.Exec(ctx, query, order.Quantity, order.Note, order.Paid, order.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update order: %w", err)
 	}
@@ -63,7 +63,7 @@ func (r *OrderPostgresRepository) Delete(ctx context.Context, id string) error {
 }
 
 func (r *OrderPostgresRepository) ListByTable(ctx context.Context, tableID string) ([]*domain.Order, error) {
-	query := `SELECT id, table_id, product_id, product_name, unit_price, quantity, note, created_by, created_at, updated_at
+	query := `SELECT id, table_id, product_id, product_name, unit_price, quantity, paid, note, created_by, created_at, updated_at
 		FROM orders WHERE table_id = $1 ORDER BY created_at`
 	rows, err := r.db.Query(ctx, query, tableID)
 	if err != nil {
@@ -74,7 +74,7 @@ func (r *OrderPostgresRepository) ListByTable(ctx context.Context, tableID strin
 	orders := make([]*domain.Order, 0)
 	for rows.Next() {
 		var order domain.Order
-		err := rows.Scan(&order.ID, &order.TableID, &order.ProductID, &order.ProductName, &order.UnitPrice, &order.Quantity, &order.Note, &order.CreatedBy, &order.CreatedAt, &order.UpdatedAt)
+		err := rows.Scan(&order.ID, &order.TableID, &order.ProductID, &order.ProductName, &order.UnitPrice, &order.Quantity, &order.Paid, &order.Note, &order.CreatedBy, &order.CreatedAt, &order.UpdatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
 		}

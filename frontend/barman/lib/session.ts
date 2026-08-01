@@ -18,9 +18,39 @@ export async function loginAction(
         token = res.token
     } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
-            return { error: "Invalid email or password" }
+            return { error: "Email o password non validi" }
         }
-        return { error: "Something went wrong, please try again" }
+        return { error: "Qualcosa è andato storto, riprova" }
+    }
+
+    const cookieStore = await cookies()
+    cookieStore.set("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: TOKEN_MAX_AGE,
+        path: "/",
+    })
+
+    redirect("/management")
+}
+
+/** Form-compatible variant for use with React's useActionState. */
+export async function loginFormAction(
+    _prevState: { error: string } | null,
+    formData: FormData
+): Promise<{ error: string } | null> {
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
+    let token: string
+    try {
+        const res = await apiLogin(email, password)
+        token = res.token
+    } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+            return { error: "Email o password non validi" }
+        }
+        return { error: "Qualcosa è andato storto, riprova" }
     }
 
     const cookieStore = await cookies()

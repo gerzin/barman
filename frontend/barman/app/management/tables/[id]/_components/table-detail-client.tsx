@@ -14,6 +14,7 @@ import {
     updateTableAction,
     addOrderAction,
     updateOrderAction,
+    markOrderPaidAction,
     removeOrderAction,
 } from "@/lib/actions/tables"
 import { formatPrice } from "@/lib/format"
@@ -53,17 +54,16 @@ function formatOrderTime(iso: string): string {
     const d = new Date(iso)
     const now = new Date()
     const diffMin = Math.round((now.getTime() - d.getTime()) / 60_000)
-    if (diffMin < 1) return "just now"
-    if (diffMin < 60) return `${diffMin}m ago`
-    // Same day: show HH:MM
+    if (diffMin < 1) return "adesso"
+    if (diffMin < 60) return `${diffMin} min fa`
     if (
         d.getFullYear() === now.getFullYear() &&
         d.getMonth() === now.getMonth() &&
         d.getDate() === now.getDate()
     ) {
-        return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        return d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
     }
-    return d.toLocaleDateString([], { month: "short", day: "numeric" })
+    return d.toLocaleDateString("it-IT", { day: "numeric", month: "short" })
 }
 
 // ---- Auto-refresh ----------------------------------------------------------
@@ -106,7 +106,7 @@ function EditTableDialog({ bill }: { bill: TableWithOrders }) {
             const result = await updateTableAction(bill.id, values.name, values.notes)
             if (result?.error) toast.error(result.error)
             else {
-                toast.success("Table updated")
+                toast.success("Tavolo aggiornato")
                 setOpen(false)
                 reset(values)
             }
@@ -116,24 +116,24 @@ function EditTableDialog({ bill }: { bill: TableWithOrders }) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger render={(props) => (
-                <Button {...props} variant="outline" size="sm">Edit</Button>
+                <Button {...props} variant="outline" size="sm">Modifica</Button>
             )} />
             <DialogContent className="sm:max-w-sm">
                 <DialogHeader>
-                    <DialogTitle>Edit table</DialogTitle>
+                    <DialogTitle>Modifica tavolo</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="et-name">Name</Label>
+                        <Label htmlFor="et-name">Nome</Label>
                         <Input id="et-name" {...register("name")} />
                         {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
                     </div>
                     <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="et-notes">Notes</Label>
-                        <Input id="et-notes" placeholder="e.g. Window seat" {...register("notes")} />
+                        <Label htmlFor="et-notes">Note</Label>
+                        <Input id="et-notes" placeholder="es. Finestra, 4 persone" {...register("notes")} />
                     </div>
                     <Button type="submit" disabled={isPending}>
-                        {isPending ? "Saving…" : "Save"}
+                        {isPending ? "Salvataggio…" : "Salva"}
                     </Button>
                 </form>
             </DialogContent>
@@ -162,7 +162,7 @@ function CloseReopenButton({ bill }: { bill: TableWithOrders }) {
             onClick={toggle}
             disabled={isPending}
         >
-            {bill.closed ? "Reopen" : "Close table"}
+            {bill.closed ? "Riapri" : "Chiudi tavolo"}
         </Button>
     )
 }
@@ -237,10 +237,10 @@ function AddOrderForm({
     // Determine selected product label for the trigger
     const selectedProduct = products.find((p) => p.id === productId)
     const triggerLabel = isCustom
-        ? "Custom item"
+        ? "Elemento personalizzato"
         : selectedProduct
             ? selectedProduct.name
-            : "Select product…"
+            : "Seleziona prodotto…"
 
     // Group products by section for the dropdown
     const sectionMap = Object.fromEntries(sections.map((s) => [s.id, s.name]))
@@ -248,13 +248,13 @@ function AddOrderForm({
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
-                <Label>Product</Label>
+                <Label>Prodotto</Label>
                 <Select value={productId} onValueChange={handleProductChange}>
                     <SelectTrigger>
                         <span className={productId ? "" : "text-muted-foreground"}>{triggerLabel}</span>
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value={CUSTOM_SENTINEL}>Custom item…</SelectItem>
+                        <SelectItem value={CUSTOM_SENTINEL}>Elemento personalizzato…</SelectItem>
                         {products.map((p) => (
                             <SelectItem key={p.id} value={p.id}>
                                 {p.section_id ? `${sectionMap[p.section_id] ?? ""}  ·  ` : ""}
@@ -271,11 +271,11 @@ function AddOrderForm({
             {isCustom && (
                 <div className="grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1.5 col-span-2">
-                        <Label htmlFor="ao-name">Item name</Label>
-                        <Input id="ao-name" placeholder="e.g. Special cocktail" {...register("productName")} />
+                        <Label htmlFor="ao-name">Nome articolo</Label>
+                        <Input id="ao-name" placeholder="es. Cocktail speciale" {...register("productName")} />
                     </div>
                     <div className="flex flex-col gap-1.5 col-span-2">
-                        <Label htmlFor="ao-price">Unit price (€) — optional</Label>
+                        <Label htmlFor="ao-price">Prezzo unitario (€) — opzionale</Label>
                         <Input
                             id="ao-price"
                             type="number"
@@ -290,7 +290,7 @@ function AddOrderForm({
 
             {!isCustom && productId && (
                 <div className="flex flex-col gap-1.5">
-                    <Label>Unit price</Label>
+                    <Label>Prezzo unitario</Label>
                     <p className="text-sm text-muted-foreground py-1">
                         {formatPrice(priceMap[productId] ?? 0)}
                     </p>
@@ -299,18 +299,18 @@ function AddOrderForm({
 
             <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="ao-qty">Qty</Label>
+                    <Label htmlFor="ao-qty">Qnt</Label>
                     <Input id="ao-qty" type="number" min={1} {...register("quantity")} />
                     {errors.quantity && <p className="text-xs text-destructive">{errors.quantity.message}</p>}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="ao-note">Who / note (optional)</Label>
-                    <Input id="ao-note" placeholder="e.g. Alice" {...register("note")} />
+                    <Label htmlFor="ao-note">Chi / nota (opzionale)</Label>
+                    <Input id="ao-note" placeholder="es. Alice" {...register("note")} />
                 </div>
             </div>
 
             <Button type="submit" disabled={isPending || !productId}>
-                {isPending ? "Adding…" : "Add order"}
+                {isPending ? "Aggiunta…" : "Aggiungi ordine"}
             </Button>
         </form>
     )
@@ -337,7 +337,7 @@ function EditOrderDialog({ order, tableId }: { order: Order; tableId: string }) 
             const result = await updateOrderAction(order.id, tableId, values.quantity, values.note)
             if (result?.error) toast.error(result.error)
             else {
-                toast.success("Order updated")
+                toast.success("Ordine aggiornato")
                 setOpen(false)
             }
         })
@@ -347,25 +347,25 @@ function EditOrderDialog({ order, tableId }: { order: Order; tableId: string }) 
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger render={(props) => (
                 <Button {...props} variant="ghost" size="sm" className="h-7 px-2 text-xs">
-                    Edit
+                    Modifica
                 </Button>
             )} />
             <DialogContent className="sm:max-w-xs">
                 <DialogHeader>
-                    <DialogTitle>Edit — {order.product_name}</DialogTitle>
+                    <DialogTitle>Modifica — {order.product_name}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="eo-qty">Quantity</Label>
+                        <Label htmlFor="eo-qty">Quantità</Label>
                         <Input id="eo-qty" type="number" min={1} {...register("quantity")} />
                         {errors.quantity && <p className="text-xs text-destructive">{errors.quantity.message}</p>}
                     </div>
                     <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="eo-note">Who / note</Label>
-                        <Input id="eo-note" placeholder="e.g. Alice" {...register("note")} />
+                        <Label htmlFor="eo-note">Chi / nota</Label>
+                        <Input id="eo-note" placeholder="es. Alice" {...register("note")} />
                     </div>
                     <Button type="submit" disabled={isPending}>
-                        {isPending ? "Saving…" : "Save"}
+                        {isPending ? "Salvataggio…" : "Salva"}
                     </Button>
                 </form>
             </DialogContent>
@@ -382,7 +382,7 @@ function RemoveOrderButton({ order, tableId }: { order: Order; tableId: string }
         startTransition(async () => {
             const result = await removeOrderAction(order.id, tableId)
             if (result?.error) toast.error(result.error)
-            else toast.success("Order removed")
+            else toast.success("Ordine rimosso")
         })
     }
 
@@ -395,27 +395,61 @@ function RemoveOrderButton({ order, tableId }: { order: Order; tableId: string }
                     size="sm"
                     className="h-7 px-2 text-xs text-destructive hover:text-destructive"
                 >
-                    Remove
+                    Rimuovi
                 </Button>
             )} />
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Remove order?</AlertDialogTitle>
+                    <AlertDialogTitle>Rimuovere l’ordine?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Remove {order.quantity}× {order.product_name} from the table?
+                        Rimuovi {order.quantity}× {order.product_name} dal tavolo?
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>Annulla</AlertDialogCancel>
                     <AlertDialogAction
                         onClick={handleRemove}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                        Remove
+                        Rimuovi
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+    )
+}
+
+// ---- Mark paid button ------------------------------------------------------
+
+function MarkPaidButton({ order, tableId }: { order: Order; tableId: string }) {
+    const [isPending, startTransition] = useTransition()
+
+    function toggle() {
+        startTransition(async () => {
+            const result = await markOrderPaidAction(
+                order.id,
+                tableId,
+                !order.paid,
+                order.quantity,
+                order.note ?? ""
+            )
+            if (result?.error) toast.error(result.error)
+        })
+    }
+
+    return (
+        <Button
+            variant="ghost"
+            size="sm"
+            className={`h-7 px-2 text-xs ${order.paid
+                    ? "text-emerald-500 hover:text-emerald-400"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+            onClick={toggle}
+            disabled={isPending}
+        >
+            {order.paid ? "✓ Pagato" : "Segna pagato"}
+        </Button>
     )
 }
 
@@ -438,12 +472,12 @@ export function TableDetailClient({ bill, products, sections }: Props) {
                         href="/management/tables"
                         className="text-xs text-muted-foreground hover:underline mb-1"
                     >
-                        ← All tables
+                        ← Tutti i tavoli
                     </Link>
                     <div className="flex flex-wrap items-center gap-3">
                         <h1 className="text-xl font-semibold">{bill.name}</h1>
                         <Badge variant={bill.closed ? "secondary" : "default"}>
-                            {bill.closed ? "Closed" : "Open"}
+                            {bill.closed ? "Chiuso" : "Aperto"}
                         </Badge>
                     </div>
                     {bill.notes && (
@@ -461,9 +495,9 @@ export function TableDetailClient({ bill, products, sections }: Props) {
 
                 {/* Orders */}
                 <section className="flex flex-col gap-3">
-                    <h2 className="text-sm font-medium">Orders</h2>
+                    <h2 className="text-sm font-medium">Ordini</h2>
                     {bill.orders.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No orders yet.</p>
+                        <p className="text-sm text-muted-foreground">Nessun ordine ancora.</p>
                     ) : (
                         <div className="flex flex-col divide-y rounded-md border">
                             {bill.orders.map((order) => (
@@ -477,21 +511,21 @@ export function TableDetailClient({ bill, products, sections }: Props) {
                         </div>
                     )}
 
-                    {/* Total */}
+                    {/* Totale */}
                     <div className="flex items-center justify-between rounded-md bg-muted/40 px-4 py-3">
-                        <span className="font-medium">Total</span>
+                        <span className="font-medium">Totale</span>
                         <span className="text-lg font-semibold tabular-nums">
                             {formatPrice(bill.total)}
                         </span>
                     </div>
                 </section>
 
-                {/* Add order */}
+                {/* Aggiungi ordine */}
                 {!bill.closed && (
                     <>
                         <Separator />
                         <section className="flex flex-col gap-3">
-                            <h2 className="text-sm font-medium">Add order</h2>
+                            <h2 className="text-sm font-medium">Aggiungi ordine</h2>
                             <AddOrderForm
                                 tableId={bill.id}
                                 products={products}
@@ -515,10 +549,12 @@ function OrderRow({
     tableClosed: boolean
 }) {
     return (
-        <div className="flex items-start gap-3 px-4 py-3">
+        <div className={`flex items-start gap-3 px-4 py-3 ${order.paid ? "opacity-50" : ""
+            }`}>
             <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                    <span className="font-medium">{order.product_name}</span>
+                    <span className={`font-medium ${order.paid ? "line-through" : ""
+                        }`}>{order.product_name}</span>
                     <span className="text-xs text-muted-foreground">×{order.quantity}</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-2 mt-0.5">
@@ -527,14 +563,18 @@ function OrderRow({
                     )}
                     <span className="text-xs text-muted-foreground/60">{formatOrderTime(order.created_at)}</span>
                 </div>
-                {!tableClosed && (
-                    <div className="mt-1 flex gap-1">
-                        <EditOrderDialog order={order} tableId={tableId} />
-                        <RemoveOrderButton order={order} tableId={tableId} />
-                    </div>
-                )}
+                <div className="mt-1 flex flex-wrap gap-1">
+                    <MarkPaidButton order={order} tableId={tableId} />
+                    {!tableClosed && (
+                        <>
+                            <EditOrderDialog order={order} tableId={tableId} />
+                            <RemoveOrderButton order={order} tableId={tableId} />
+                        </>
+                    )}
+                </div>
             </div>
-            <span className="tabular-nums text-sm shrink-0 pt-0.5">
+            <span className={`tabular-nums text-sm shrink-0 pt-0.5 ${order.paid ? "line-through text-muted-foreground" : ""
+                }`}>
                 {order.unit_price > 0
                     ? formatPrice(order.unit_price * order.quantity)
                     : <span className="text-muted-foreground">—</span>}

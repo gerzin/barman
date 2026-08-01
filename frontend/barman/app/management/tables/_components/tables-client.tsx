@@ -60,23 +60,23 @@ function CreateTableDialog() {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger render={(props) => <Button {...props} size="sm">New table</Button>} />
+            <DialogTrigger render={(props) => <Button {...props} size="sm">Nuovo tavolo</Button>} />
             <DialogContent className="sm:max-w-sm">
                 <DialogHeader>
-                    <DialogTitle>Create table</DialogTitle>
+                    <DialogTitle>Crea tavolo</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="t-name">Name</Label>
-                        <Input id="t-name" placeholder="e.g. Table 3" {...register("name")} />
+                        <Label htmlFor="t-name">Nome</Label>
+                        <Input id="t-name" placeholder="es. Tavolo 3" {...register("name")} />
                         {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
                     </div>
                     <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="t-notes">Notes (optional)</Label>
-                        <Input id="t-notes" placeholder="e.g. Window seat, 4 people" {...register("notes")} />
+                        <Label htmlFor="t-notes">Note (opzionale)</Label>
+                        <Input id="t-notes" placeholder="es. Finestra, 4 persone" {...register("notes")} />
                     </div>
                     <Button type="submit" disabled={isPending}>
-                        {isPending ? "Creating…" : "Create"}
+                        {isPending ? "Creazione…" : "Crea"}
                     </Button>
                 </form>
             </DialogContent>
@@ -110,18 +110,18 @@ function DeleteTableButton({ table }: { table: Table }) {
             )} />
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Delete {table.name}?</AlertDialogTitle>
+                    <AlertDialogTitle>Eliminare {table.name}?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        All orders and logs for this table will be permanently deleted.
+                        Tutti gli ordini e i log di questo tavolo verranno eliminati definitivamente.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>Annulla</AlertDialogCancel>
                     <AlertDialogAction
                         onClick={handleDelete}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                        Delete
+                        Elimina
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
@@ -136,17 +136,17 @@ export function TablesClient({ tables }: { tables: Table[] }) {
     return (
         <div className="flex flex-col gap-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-xl font-semibold">Tables</h1>
+                <h1 className="text-xl font-semibold">Tavoli</h1>
                 <CreateTableDialog />
             </div>
 
             {tables.length === 0 && (
-                <p className="text-sm text-muted-foreground">No tables yet. Create one to get started.</p>
+                <p className="text-sm text-muted-foreground">Nessun tavolo. Creane uno per iniziare.</p>
             )}
 
             {open.length > 0 && (
                 <section className="flex flex-col gap-2">
-                    <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Open</h2>
+                    <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Aperti</h2>
                     <div className="flex flex-col gap-2">
                         {open.map((table) => (
                             <TableCard key={table.id} table={table} />
@@ -157,7 +157,7 @@ export function TablesClient({ tables }: { tables: Table[] }) {
 
             {closed.length > 0 && (
                 <section className="flex flex-col gap-2">
-                    <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Closed</h2>
+                    <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Chiusi</h2>
                     <div className="flex flex-col gap-2 opacity-60">
                         {closed.map((table) => (
                             <TableCard key={table.id} table={table} />
@@ -184,7 +184,7 @@ function TableCard({ table }: { table: Table }) {
                     )}
                 </div>
                 <Badge variant={table.closed ? "secondary" : "default"} className="shrink-0">
-                    {table.closed ? "Closed" : "Open"}
+                    {table.closed ? "Chiuso" : "Aperto"}
                 </Badge>
             </Link>
             {/* Delete sits outside the link */}

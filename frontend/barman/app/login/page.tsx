@@ -1,37 +1,18 @@
 "use client"
 
-import { useState } from "react"
-import { loginAction } from "@/lib/session"
+import { useActionState } from "react"
+import { loginFormAction } from "@/lib/session"
 
 export default function LoginPage() {
-    const [error, setError] = useState<string | null>(null)
-    const [pending, setPending] = useState(false)
-
-    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-        e.preventDefault()
-        setError(null)
-        setPending(true)
-
-        const data = new FormData(e.currentTarget)
-        const result = await loginAction(
-            data.get("email") as string,
-            data.get("password") as string
-        )
-
-        // loginAction redirects on success, so we only reach here on error
-        if (result?.error) {
-            setError(result.error)
-            setPending(false)
-        }
-    }
+    const [state, action, pending] = useActionState(loginFormAction, null)
 
     return (
-        <main className="flex min-h-full items-center justify-center">
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm">
-                <h1 className="text-2xl font-semibold">Staff login</h1>
+        <main className="flex min-h-full items-center justify-center px-4">
+            <form action={action} className="flex flex-col gap-4 w-full max-w-sm">
+                <h1 className="text-2xl font-semibold">Accesso staff</h1>
 
-                {error && (
-                    <p className="text-red-600 text-sm">{error}</p>
+                {state?.error && (
+                    <p className="text-destructive text-sm">{state.error}</p>
                 )}
 
                 <input
@@ -39,21 +20,23 @@ export default function LoginPage() {
                     type="email"
                     placeholder="Email"
                     required
-                    className="border rounded px-3 py-2"
+                    autoComplete="email"
+                    className="border rounded px-3 py-2 bg-background text-foreground"
                 />
                 <input
                     name="password"
                     type="password"
                     placeholder="Password"
                     required
-                    className="border rounded px-3 py-2"
+                    autoComplete="current-password"
+                    className="border rounded px-3 py-2 bg-background text-foreground"
                 />
                 <button
                     type="submit"
                     disabled={pending}
-                    className="bg-black text-white rounded px-3 py-2 disabled:opacity-50"
+                    className="bg-primary text-primary-foreground rounded px-3 py-2 disabled:opacity-50"
                 >
-                    {pending ? "Signing in…" : "Sign in"}
+                    {pending ? "Accesso in corso…" : "Accedi"}
                 </button>
             </form>
         </main>

@@ -50,6 +50,7 @@ export interface Order {
     product_name: string
     unit_price: number
     quantity: number
+    paid: boolean
     note?: string
     created_by?: string | null
     created_at: string

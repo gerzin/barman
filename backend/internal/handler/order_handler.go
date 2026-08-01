@@ -44,6 +44,7 @@ type createOrderRequest struct {
 type updateOrderRequest struct {
 	Quantity int    `json:"quantity" binding:"required,min=1"`
 	Note     string `json:"note"`
+	Paid     *bool  `json:"paid"`
 }
 
 func (h *OrderHandler) Create(c *gin.Context) {
@@ -76,7 +77,7 @@ func (h *OrderHandler) Update(c *gin.Context) {
 	}
 
 	employeeID, _ := middleware.UserID(c)
-	order, err := h.service.UpdateOrder(c.Request.Context(), c.Param("orderID"), req.Quantity, req.Note, &employeeID)
+	order, err := h.service.UpdateOrder(c.Request.Context(), c.Param("orderID"), req.Quantity, req.Note, req.Paid, &employeeID)
 	if err != nil {
 		writeOrderServiceError(c, err)
 		return
