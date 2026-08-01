@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
 import {
     Dialog,
     DialogContent,
@@ -34,7 +33,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-// ─── Schemas ─────────────────────────────────────────────────────────────────
+// ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const productSchema = z.object({
     name: z.string().min(1, "Required"),
@@ -53,14 +52,46 @@ const sectionSchema = z.object({
 type ProductValues = z.infer<typeof productSchema>
 type SectionValues = z.infer<typeof sectionSchema>
 
+// ─── Shared delete confirmation ───────────────────────────────────────────────
+
+function DeleteButton({ label, onConfirm }: { label: string; onConfirm: () => void }) {
+    return (
+        <AlertDialog>
+            <AlertDialogTrigger render={(props) => (
+                <Button {...props} variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                    Delete
+                </Button>
+            )} />
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {label}?</AlertDialogTitle>
+                    <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={onConfirm}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                        Delete
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    )
+}
+
 // ─── Product dialog (create / edit) ──────────────────────────────────────────
 
 function ProductDialog({
     product,
     sections,
+    defaultSectionId,
 }: {
     product?: Product
     sections: MenuSection[]
+    // Pre-fills section when adding a product from within a section card
+    defaultSectionId?: string | null
 }) {
     const [open, setOpen] = useState(false)
     const [isPending, startTransition] = useTransition()
@@ -76,21 +107,19 @@ function ProductDialog({
                 available: product.available,
                 section_id: product.section_id ?? null,
             }
-            : { name: "", description: "", price: 0, available: true, section_id: null },
+            : { name: "", description: "", price: 0, available: true, section_id: defaultSectionId ?? null },
     })
 
     const available = watch("available")
     const sectionId = watch("section_id")
+    // SelectValue in base-ui can't resolve text before the dropdown has opened; resolve manually
     const sectionLabel = sectionId
         ? (sections.find((s) => s.id === sectionId)?.name ?? "No section")
         : "No section"
 
     function onSubmit(values: ProductValues) {
         startTransition(async () => {
-            const input = {
-                ...values,
-                section_id: values.section_id || null,
-            }
+            const input = { ...values, section_id: values.section_id || null }
             const result = isEditing
                 ? await updateProductAction(product.id, input)
                 : await createProductAction(input)
@@ -108,8 +137,8 @@ function ProductDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger render={(props) => (
-                <Button {...props} variant={isEditing ? "ghost" : "default"} size="sm">
-                    {isEditing ? "Edit" : "New product"}
+                <Button {...props} variant={isEditing ? "ghost" : "outline"} size="sm">
+                    {isEditing ? "Edit" : "+ Add product"}
                 </Button>
             )} />
             <DialogContent className="sm:max-w-md">
@@ -134,11 +163,10 @@ function ProductDialog({
                     <div className="flex flex-col gap-1.5">
                         <Label>Section</Label>
                         <Select
-                            defaultValue={product?.section_id ?? "none"}
+                            defaultValue={sectionId ?? "none"}
                             onValueChange={(v) => setValue("section_id", v === "none" ? null : v)}
                         >
                             <SelectTrigger>
-                                {/* SelectValue can't resolve text before dropdown opens; resolve name manually */}
                                 <span>{sectionLabel}</span>
                             </SelectTrigger>
                             <SelectContent>
@@ -168,13 +196,7 @@ function ProductDialog({
 
 // ─── Section dialog (create / edit) ──────────────────────────────────────────
 
-function SectionDialog({
-    section,
-    nextPosition,
-}: {
-    section?: MenuSection
-    nextPosition: number
-}) {
+function SectionDialog({ section, nextPosition }: { section?: MenuSection; nextPosition: number }) {
     const [open, setOpen] = useState(false)
     const [isPending, startTransition] = useTransition()
     const isEditing = !!section
@@ -237,39 +259,12 @@ function SectionDialog({
     )
 }
 
-// ─── Delete confirm helpers ───────────────────────────────────────────────────
+// ─── Single product row ───────────────────────────────────────────────────────
 
-function DeleteButton({ label, onConfirm }: { label: string; onConfirm: () => void }) {
-    return (
-        <AlertDialog>
-            <AlertDialogTrigger render={(props) => (
-                <Button {...props} variant="ghost" size="sm" className="text-destructive hover:text-destructive">Delete</Button>
-            )} />
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Delete {label}?</AlertDialogTitle>
-                    <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={onConfirm}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                        Delete
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-    )
-}
-
-// ─── Products list ────────────────────────────────────────────────────────────
-
-function ProductsSection({ products, sections }: { products: Product[]; sections: MenuSection[] }) {
+function ProductRow({ product, sections }: { product: Product; sections: MenuSection[] }) {
     const [isPending, startTransition] = useTransition()
 
-    function handleToggle(product: Product) {
+    function handleToggle() {
         startTransition(async () => {
             const result = await updateProductAction(product.id, {
                 name: product.name,
@@ -282,123 +277,142 @@ function ProductsSection({ products, sections }: { products: Product[]; sections
         })
     }
 
-    function handleDelete(id: string, name: string) {
+    function handleDelete() {
         startTransition(async () => {
-            const result = await deleteProductAction(id)
+            const result = await deleteProductAction(product.id)
             if (result?.error) {
                 toast.error(result.error)
             } else {
-                toast.success(`"${name}" deleted`)
+                toast.success(`"${product.name}" deleted`)
             }
         })
     }
 
-    const sectionName = (id?: string | null) =>
-        id ? sections.find((s) => s.id === id)?.name ?? "—" : "—"
-
     return (
-        <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Products</h2>
-                <ProductDialog sections={sections} />
-            </div>
-            <div className="flex flex-col divide-y rounded-md border">
-                {products.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-muted-foreground">No products yet</p>
-                ) : (
-                    products.map((product) => (
-                        <div key={product.id} className="flex items-center gap-3 px-4 py-3">
-                            <Switch
-                                checked={product.available}
-                                onCheckedChange={() => handleToggle(product)}
-                                disabled={isPending}
-                                aria-label="Available"
-                            />
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate font-medium">{product.name}</p>
-                                <p className="text-sm text-muted-foreground">
-                                    €{product.price.toFixed(2)} · {sectionName(product.section_id)}
-                                </p>
-                            </div>
-                            <Badge variant={product.available ? "default" : "secondary"}>
-                                {product.available ? "Available" : "Unavailable"}
-                            </Badge>
-                            <ProductDialog
-                                product={product}
-                                sections={sections}
-                            />
-                            <DeleteButton
-                                label={product.name}
-                                onConfirm={() => handleDelete(product.id, product.name)}
-                            />
-                        </div>
-                    ))
+        <div className="flex items-center gap-3 px-4 py-2.5">
+            <Switch
+                checked={product.available}
+                onCheckedChange={handleToggle}
+                disabled={isPending}
+                aria-label={`Toggle ${product.name} availability`}
+            />
+            <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{product.name}</p>
+                {product.description && (
+                    <p className="truncate text-xs text-muted-foreground">{product.description}</p>
                 )}
             </div>
+            <span className="shrink-0 text-sm">€{product.price.toFixed(2)}</span>
+            {!product.available && (
+                <Badge variant="secondary" className="shrink-0 text-xs">Off</Badge>
+            )}
+            <ProductDialog product={product} sections={sections} />
+            <DeleteButton label={product.name} onConfirm={handleDelete} />
         </div>
     )
 }
 
-// ─── Sections list ────────────────────────────────────────────────────────────
+// ─── Section card (header + products + add-product button) ───────────────────
 
-function SectionsSection({ sections }: { sections: MenuSection[] }) {
+function SectionCard({
+    section,
+    products,
+    sections,
+    nextPosition,
+}: {
+    section: MenuSection
+    products: Product[]
+    sections: MenuSection[]
+    nextPosition: number
+}) {
     const [isPending, startTransition] = useTransition()
-    const nextPosition = sections.length
 
-    function handleDelete(id: string, name: string) {
+    function handleDeleteSection() {
         startTransition(async () => {
-            const result = await deleteSectionAction(id)
+            const result = await deleteSectionAction(section.id)
             if (result?.error) {
                 toast.error(result.error)
             } else {
-                toast.success(`"${name}" deleted`)
+                toast.success(`"${section.name}" deleted`)
             }
         })
     }
 
     return (
-        <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Sections</h2>
-                <SectionDialog nextPosition={nextPosition} />
+        <div className="rounded-md border">
+            <div className="flex items-center gap-2 border-b bg-muted/40 px-4 py-2.5">
+                <div className="min-w-0 flex-1">
+                    <p className="font-semibold">{section.name}</p>
+                    {section.description && (
+                        <p className="text-xs text-muted-foreground">{section.description}</p>
+                    )}
+                </div>
+                <SectionDialog section={section} nextPosition={nextPosition} />
+                <DeleteButton label={section.name} onConfirm={handleDeleteSection} />
             </div>
-            <div className="flex flex-col divide-y rounded-md border">
-                {sections.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-muted-foreground">No sections yet</p>
-                ) : (
-                    sections.map((section) => (
-                        <div key={section.id} className="flex items-center gap-3 px-4 py-3">
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate font-medium">{section.name}</p>
-                                {section.description && (
-                                    <p className="truncate text-sm text-muted-foreground">{section.description}</p>
-                                )}
-                            </div>
-                            <span className="text-sm text-muted-foreground">#{section.position}</span>
-                            <SectionDialog
-                                section={section}
-                                nextPosition={nextPosition}
-                            />
-                            <DeleteButton
-                                label={section.name}
-                                onConfirm={() => handleDelete(section.id, section.name)}
-                            />
-                        </div>
-                    ))
+
+            <div className="divide-y">
+                {products.length === 0 && (
+                    <p className="px-4 py-3 text-sm text-muted-foreground">No products yet.</p>
                 )}
+                {products.map((p) => (
+                    <ProductRow key={p.id} product={p} sections={sections} />
+                ))}
+            </div>
+
+            <div className="border-t px-3 py-2">
+                <ProductDialog defaultSectionId={section.id} sections={sections} />
             </div>
         </div>
     )
 }
 
-// ─── Root client component ────────────────────────────────────────────────────
+// ─── Root component ───────────────────────────────────────────────────────────
 
 export function MenuClient({ products, sections }: { products: Product[]; sections: MenuSection[] }) {
+    const sortedSections = [...sections].sort((a, b) => a.position - b.position)
+    const uncategorized = products.filter((p) => !p.section_id)
+
     return (
-        <div className="flex flex-col gap-8">
-            <ProductsSection products={products} sections={sections} />
-            <Separator />
-            <SectionsSection sections={sections} />
+        <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+                <h1 className="text-xl font-semibold">Menu</h1>
+                <SectionDialog nextPosition={sections.length} />
+            </div>
+
+            {sortedSections.length === 0 && products.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                    Start by creating a section, then add products to it.
+                </p>
+            )}
+
+            {sortedSections.map((section) => (
+                <SectionCard
+                    key={section.id}
+                    section={section}
+                    products={products.filter((p) => p.section_id === section.id)}
+                    sections={sections}
+                    nextPosition={sections.length}
+                />
+            ))}
+
+            {/* Uncategorized bucket — always visible so products can exist without a section */}
+            <div className="rounded-md border">
+                <div className="border-b bg-muted/40 px-4 py-2.5">
+                    <p className="font-semibold text-muted-foreground">Uncategorized</p>
+                </div>
+                <div className="divide-y">
+                    {uncategorized.length === 0 && (
+                        <p className="px-4 py-3 text-sm text-muted-foreground">No uncategorized products.</p>
+                    )}
+                    {uncategorized.map((p) => (
+                        <ProductRow key={p.id} product={p} sections={sections} />
+                    ))}
+                </div>
+                <div className="border-t px-3 py-2">
+                    <ProductDialog sections={sections} />
+                </div>
+            </div>
         </div>
     )
 }

@@ -55,7 +55,7 @@ type EditUserValues = z.infer<typeof editUserSchema>
 function CreateUserDialog() {
     const [open, setOpen] = useState(false)
     const [isPending, startTransition] = useTransition()
-    const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<CreateUserValues>({
+    const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CreateUserValues>({
         resolver: zodResolver(createUserSchema),
         defaultValues: { role: "employee" },
     })
@@ -109,7 +109,7 @@ function CreateUserDialog() {
                     </div>
                     <div className="flex flex-col gap-1.5">
                         <Label>Role</Label>
-                        <Select defaultValue="employee" onValueChange={(v) => setValue("role", v as "admin" | "employee")}>
+                        <Select value={watch("role")} onValueChange={(v) => setValue("role", v as "admin" | "employee")}>
                             <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
@@ -131,7 +131,7 @@ function CreateUserDialog() {
 function EditUserDialog({ user }: { user: User }) {
     const [open, setOpen] = useState(false)
     const [isPending, startTransition] = useTransition()
-    const { register, handleSubmit, setValue, formState: { errors } } = useForm<EditUserValues>({
+    const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<EditUserValues>({
         resolver: zodResolver(editUserSchema),
         defaultValues: {
             name: user.name,
@@ -185,10 +185,7 @@ function EditUserDialog({ user }: { user: User }) {
                     </div>
                     <div className="flex flex-col gap-1.5">
                         <Label>Role</Label>
-                        <Select
-                            defaultValue={user.role}
-                            onValueChange={(v) => setValue("role", v as "admin" | "employee")}
-                        >
+                        <Select value={watch("role")} onValueChange={(v) => setValue("role", v as "admin" | "employee")}>
                             <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
