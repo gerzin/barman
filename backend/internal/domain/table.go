@@ -13,6 +13,7 @@ import (
 type Table struct {
 	ID        string     `json:"id"`
 	Name      string     `json:"name"`
+	Notes     string     `json:"notes"`
 	QRToken   string     `json:"qr_token"`
 	Closed    bool       `json:"closed"`
 	ClosedAt  *time.Time `json:"closed_at,omitempty"`

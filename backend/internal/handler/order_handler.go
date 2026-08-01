@@ -33,9 +33,12 @@ func (h *OrderHandler) RegisterRoutes(rg *gin.RouterGroup) {
 }
 
 type createOrderRequest struct {
-	ProductID string `json:"product_id" binding:"required"`
-	Quantity  int    `json:"quantity" binding:"required,min=1"`
-	Note      string `json:"note"`
+	// Either ProductID is set, or ProductName + UnitPrice must be provided.
+	ProductID   *string `json:"product_id"`
+	ProductName string  `json:"product_name"`
+	UnitPrice   float64 `json:"unit_price"`
+	Quantity    int     `json:"quantity" binding:"required,min=1"`
+	Note        string  `json:"note"`
 }
 
 type updateOrderRequest struct {
@@ -50,8 +53,13 @@ func (h *OrderHandler) Create(c *gin.Context) {
 		return
 	}
 
+	if req.ProductID == nil && req.ProductName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "either product_id or product_name must be provided"})
+		return
+	}
+
 	employeeID, _ := middleware.UserID(c)
-	order, err := h.service.AddOrder(c.Request.Context(), c.Param("id"), req.ProductID, req.Quantity, req.Note, &employeeID)
+	order, err := h.service.AddOrder(c.Request.Context(), c.Param("id"), req.ProductID, req.ProductName, req.UnitPrice, req.Quantity, req.Note, &employeeID)
 	if err != nil {
 		writeOrderServiceError(c, err)
 		return

@@ -34,7 +34,7 @@ func NewOrderService(
 // AddOrder appends a new line item to a table's bill. performedBy is the
 // acting employee's user ID, or nil when the customer placed it themselves
 // through the QR self-order page.
-func (s *OrderService) AddOrder(ctx context.Context, tableID, productID string, quantity int, note string, performedBy *string) (*domain.Order, error) {
+func (s *OrderService) AddOrder(ctx context.Context, tableID string, productID *string, productName string, unitPrice float64, quantity int, note string, performedBy *string) (*domain.Order, error) {
 	if quantity <= 0 {
 		return nil, domain.ErrInvalidQuantity
 	}
@@ -47,19 +47,24 @@ func (s *OrderService) AddOrder(ctx context.Context, tableID, productID string, 
 		return nil, domain.ErrTableClosed
 	}
 
-	product, err := s.productRepo.GetByID(ctx, productID)
-	if err != nil {
-		return nil, err
+	order := &domain.Order{
+		TableID:   tableID,
+		Quantity:  quantity,
+		Note:      note,
+		CreatedBy: performedBy,
 	}
 
-	order := &domain.Order{
-		TableID:     tableID,
-		ProductID:   &product.ID,
-		ProductName: product.Name,
-		UnitPrice:   product.Price,
-		Quantity:    quantity,
-		Note:        note,
-		CreatedBy:   performedBy,
+	if productID != nil {
+		product, err := s.productRepo.GetByID(ctx, *productID)
+		if err != nil {
+			return nil, err
+		}
+		order.ProductID = productID
+		order.ProductName = product.Name
+		order.UnitPrice = product.Price
+	} else {
+		order.ProductName = productName
+		order.UnitPrice = unitPrice
 	}
 
 	if err := s.orderRepo.Create(ctx, order); err != nil {

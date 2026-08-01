@@ -8,6 +8,9 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
             <header className="sticky top-0 z-10 border-b bg-background px-4 py-3">
                 <div className="mx-auto flex max-w-3xl items-center justify-between">
                     <nav className="flex gap-6">
+                        <Link href="/management/tables" className="text-sm font-medium hover:underline">
+                            Tables
+                        </Link>
                         <Link href="/management/menu" className="text-sm font-medium hover:underline">
                             Menu
                         </Link>

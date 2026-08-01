@@ -63,7 +63,7 @@ func (h *PublicHandler) AddOrder(c *gin.Context) {
 		return
 	}
 
-	order, err := h.orderService.AddOrder(c.Request.Context(), table.ID, req.ProductID, req.Quantity, req.Note, nil)
+	order, err := h.orderService.AddOrder(c.Request.Context(), table.ID, req.ProductID, "", 0, req.Quantity, req.Note, nil)
 	if err != nil {
 		writeOrderServiceError(c, err)
 		return

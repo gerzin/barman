@@ -35,7 +35,8 @@ func (h *TableHandler) RegisterRoutes(rg *gin.RouterGroup) {
 }
 
 type tableRequest struct {
-	Name string `json:"name" binding:"required"`
+	Name  string `json:"name" binding:"required"`
+	Notes string `json:"notes"`
 }
 
 func (h *TableHandler) Create(c *gin.Context) {
@@ -45,7 +46,7 @@ func (h *TableHandler) Create(c *gin.Context) {
 		return
 	}
 
-	table := domain.Table{Name: req.Name}
+	table := domain.Table{Name: req.Name, Notes: req.Notes}
 	if err := h.service.CreateTable(c.Request.Context(), &table); err != nil {
 		writeTableServiceError(c, err)
 		return
@@ -88,6 +89,7 @@ func (h *TableHandler) Update(c *gin.Context) {
 	}
 
 	table.Name = req.Name
+	table.Notes = req.Notes
 	if err := h.service.UpdateTable(c.Request.Context(), table); err != nil {
 		writeTableServiceError(c, err)
 		return

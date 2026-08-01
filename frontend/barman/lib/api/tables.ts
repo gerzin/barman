@@ -2,7 +2,10 @@ import { apiFetch } from "@/lib/api/client"
 import type { Order, OrderLog, Table, TableWithOrders } from "@/lib/api/types"
 
 export interface OrderInput {
-    product_id: string
+    product_id?: string | null
+    // Used when product_id is not set
+    product_name?: string
+    unit_price?: number
     quantity: number
     note?: string
 }
@@ -20,8 +23,18 @@ export function getTable(id: string, token: string): Promise<Table> {
 }
 
 /** Mirrors POST /api/v1/tables. */
-export function createTable(name: string, token: string): Promise<Table> {
-    return apiFetch<Table>("/api/v1/tables", { method: "POST", body: { name }, token })
+export function createTable(name: string, notes: string, token: string): Promise<Table> {
+    return apiFetch<Table>("/api/v1/tables", { method: "POST", body: { name, notes }, token })
+}
+
+/** Mirrors PUT /api/v1/tables/:id. */
+export function updateTable(id: string, name: string, notes: string, token: string): Promise<Table> {
+    return apiFetch<Table>(`/api/v1/tables/${id}`, { method: "PUT", body: { name, notes }, token })
+}
+
+/** Mirrors DELETE /api/v1/tables/:id. */
+export function deleteTable(id: string, token: string): Promise<void> {
+    return apiFetch<void>(`/api/v1/tables/${id}`, { method: "DELETE", token })
 }
 
 /** Mirrors GET /api/v1/tables/:id/bill - the table with its current orders

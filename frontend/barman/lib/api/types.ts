@@ -35,6 +35,7 @@ export interface MenuSectionWithProducts extends MenuSection {
 export interface Table {
     id: string
     name: string
+    notes: string
     qr_token: string
     closed: boolean
     closed_at?: string | null
