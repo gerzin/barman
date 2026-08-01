@@ -1,0 +1,7 @@
+name: test_env
+variables:
+  - name: base_url
+    value: http://localhost:8080/api/v1
+    description: base backend api
+  - name: token
+    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTU1MjhiODEtZjExZi00ODA2LThhZTItZGVlZjgxMzBiZGZhIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzg1Njg1NjU5LCJpYXQiOjE3ODU1OTkyNTl9.-EaEQFZim-J7exZe8thllCdR-86SH6VCn_9iFQ_Lrsk
