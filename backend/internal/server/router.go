@@ -51,7 +51,7 @@ func NewRouter(deps Dependencies) *gin.Engine {
 
 	v1 := router.Group("/api/v1")
 	{
-		deps.AuthHandler.RegisterRoutes(v1)
+		deps.AuthHandler.RegisterPublicRoutes(v1)
 		deps.PublicHandler.RegisterRoutes(v1)
 
 		deps.UserHandler.RegisterRoutes(v1)
@@ -63,6 +63,7 @@ func NewRouter(deps Dependencies) *gin.Engine {
 		staff := v1.Group("")
 		staff.Use(middleware.RequireAuth(deps.JWTSecret))
 		{
+			deps.AuthHandler.RegisterProtectedRoutes(staff)
 			deps.TableHandler.RegisterRoutes(staff)
 			deps.OrderHandler.RegisterRoutes(staff)
 		}

@@ -21,9 +21,14 @@ func NewAuthHandler(service *service.AuthService) *AuthHandler {
 	return &AuthHandler{service: service}
 }
 
-// RegisterRoutes attaches the auth routes to the given router group.
-func (h *AuthHandler) RegisterRoutes(rg *gin.RouterGroup) {
+// RegisterPublicRoutes attaches the unauthenticated auth routes.
+func (h *AuthHandler) RegisterPublicRoutes(rg *gin.RouterGroup) {
 	rg.POST("/auth/login", h.Login)
+}
+
+// RegisterProtectedRoutes attaches auth routes that require a valid JWT.
+func (h *AuthHandler) RegisterProtectedRoutes(rg *gin.RouterGroup) {
+	rg.GET("/auth/me", h.Me)
 }
 
 type loginRequest struct {
@@ -49,4 +54,14 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"token": token, "user": user})
+}
+
+func (h *AuthHandler) Me(c *gin.Context) {
+	userID, _ := c.Get("userID")
+	user, err := h.service.Me(c.Request.Context(), userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"user": user})
 }
