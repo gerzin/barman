@@ -285,8 +285,8 @@ function AddOrderForm({
                     {errors.quantity && <p className="text-xs text-destructive">{errors.quantity.message}</p>}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="ao-note">Chi / nota (opzionale)</Label>
-                    <Input id="ao-note" placeholder="es. Alice" {...register("note")} />
+                    <Label htmlFor="ao-note">Note (opzionale)</Label>
+                    <Input id="ao-note" placeholder="es. Chiaretta, Hendrix, Senza cipolla..." {...register("note")} />
                 </div>
             </div>
 
@@ -342,8 +342,8 @@ function EditOrderDialog({ order, tableId }: { order: Order; tableId: string }) 
                         {errors.quantity && <p className="text-xs text-destructive">{errors.quantity.message}</p>}
                     </div>
                     <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="eo-note">Chi / nota</Label>
-                        <Input id="eo-note" placeholder="es. Alice" {...register("note")} />
+                        <Label htmlFor="eo-note">Note</Label>
+                        <Input id="eo-note" placeholder="es. Chiaretta, Hendrix, Senza cipolla..." {...register("note")} />
                     </div>
                     <Button type="submit" disabled={isPending}>
                         {isPending ? "Salvataggio…" : "Salva"}
