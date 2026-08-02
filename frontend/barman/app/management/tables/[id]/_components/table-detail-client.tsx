@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useTransition, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useTransition, useOptimistic } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
@@ -47,6 +46,7 @@ import {
     SelectItem,
     SelectTrigger,
 } from "@/components/ui/select"
+import { useAutoRefresh } from "@/lib/hooks/use-auto-refresh"
 
 const CUSTOM_SENTINEL = "__CUSTOM__"
 
@@ -64,25 +64,6 @@ function formatOrderTime(iso: string): string {
         return d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
     }
     return d.toLocaleDateString("it-IT", { day: "numeric", month: "short" })
-}
-
-// ---- Auto-refresh ----------------------------------------------------------
-
-function AutoRefresh({ disabled }: { disabled: boolean }) {
-    const router = useRouter()
-    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-    useEffect(() => {
-        if (disabled) return
-        intervalRef.current = setInterval(() => {
-            router.refresh()
-        }, 10_000)
-        return () => {
-            if (intervalRef.current) clearInterval(intervalRef.current)
-        }
-    }, [router, disabled])
-
-    return null
 }
 
 // ---- Edit table dialog -----------------------------------------------------
@@ -346,7 +327,7 @@ function EditOrderDialog({ order, tableId }: { order: Order; tableId: string }) 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger render={(props) => (
-                <Button {...props} variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                <Button {...props} variant="ghost" size="sm" className="px-2 text-xs">
                     Modifica
                 </Button>
             )} />
@@ -393,7 +374,7 @@ function RemoveOrderButton({ order, tableId }: { order: Order; tableId: string }
                     {...props}
                     variant="ghost"
                     size="sm"
-                    className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                    className="px-2 text-xs text-destructive hover:text-destructive"
                 >
                     Rimuovi
                 </Button>
@@ -419,13 +400,26 @@ function RemoveOrderButton({ order, tableId }: { order: Order; tableId: string }
     )
 }
 
-// ---- Mark paid button ------------------------------------------------------
+// ---- Order row (includes mark-paid toggle) --------------------------------
 
-function MarkPaidButton({ order, tableId }: { order: Order; tableId: string }) {
-    const [isPending, startTransition] = useTransition()
+function OrderRow({
+    order,
+    tableId,
+    tableClosed,
+}: {
+    order: Order
+    tableId: string
+    tableClosed: boolean
+}) {
+    const [optimisticPaid, toggleOptimisticPaid] = useOptimistic(
+        order.paid,
+        (_, next: boolean) => next
+    )
+    const [isPendingPaid, startPaidTransition] = useTransition()
 
-    function toggle() {
-        startTransition(async () => {
+    function handleTogglePaid() {
+        startPaidTransition(async () => {
+            toggleOptimisticPaid(!optimisticPaid)
             const result = await markOrderPaidAction(
                 order.id,
                 tableId,
@@ -438,22 +432,50 @@ function MarkPaidButton({ order, tableId }: { order: Order; tableId: string }) {
     }
 
     return (
-        <Button
-            variant="ghost"
-            size="sm"
-            className={`h-7 px-2 text-xs ${order.paid
-                    ? "text-emerald-500 hover:text-emerald-400"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-            onClick={toggle}
-            disabled={isPending}
-        >
-            {order.paid ? "✓ Pagato" : "Segna pagato"}
-        </Button>
+        <div className={`flex items-start gap-3 px-4 py-3 transition-opacity ${optimisticPaid ? "opacity-50" : ""
+            }`}>
+            <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                    <span className={`font-medium ${optimisticPaid ? "line-through" : ""
+                        }`}>{order.product_name}</span>
+                    <span className="text-xs text-muted-foreground">×{order.quantity}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-2 mt-0.5">
+                    {order.note && (
+                        <span className="text-xs text-muted-foreground">{order.note}</span>
+                    )}
+                    <span className="text-xs text-muted-foreground/60">{formatOrderTime(order.created_at)}</span>
+                </div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`px-2 text-xs ${optimisticPaid
+                            ? "text-emerald-500 hover:text-emerald-400"
+                            : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        onClick={handleTogglePaid}
+                        disabled={isPendingPaid}
+                    >
+                        {optimisticPaid ? "✓ Pagato" : "Segna pagato"}
+                    </Button>
+                    {!tableClosed && (
+                        <>
+                            <EditOrderDialog order={order} tableId={tableId} />
+                            <RemoveOrderButton order={order} tableId={tableId} />
+                        </>
+                    )}
+                </div>
+            </div>
+            <span className={`tabular-nums text-sm shrink-0 pt-0.5 ${optimisticPaid ? "line-through text-muted-foreground" : ""
+                }`}>
+                {order.unit_price > 0
+                    ? formatPrice(order.unit_price * order.quantity)
+                    : <span className="text-muted-foreground">—</span>}
+            </span>
+        </div>
     )
 }
-
-// ---- Main component --------------------------------------------------------
 
 interface Props {
     bill: TableWithOrders
@@ -462,9 +484,10 @@ interface Props {
 }
 
 export function TableDetailClient({ bill, products, sections }: Props) {
+    useAutoRefresh(true)
+
     return (
         <>
-            <AutoRefresh disabled={bill.closed} />
             <div className="flex flex-col gap-6">
                 {/* Header */}
                 <div className="flex flex-col gap-1">
@@ -536,49 +559,5 @@ export function TableDetailClient({ bill, products, sections }: Props) {
                 )}
             </div>
         </>
-    )
-}
-
-function OrderRow({
-    order,
-    tableId,
-    tableClosed,
-}: {
-    order: Order
-    tableId: string
-    tableClosed: boolean
-}) {
-    return (
-        <div className={`flex items-start gap-3 px-4 py-3 ${order.paid ? "opacity-50" : ""
-            }`}>
-            <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                    <span className={`font-medium ${order.paid ? "line-through" : ""
-                        }`}>{order.product_name}</span>
-                    <span className="text-xs text-muted-foreground">×{order.quantity}</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-x-2 mt-0.5">
-                    {order.note && (
-                        <span className="text-xs text-muted-foreground">{order.note}</span>
-                    )}
-                    <span className="text-xs text-muted-foreground/60">{formatOrderTime(order.created_at)}</span>
-                </div>
-                <div className="mt-1 flex flex-wrap gap-1">
-                    <MarkPaidButton order={order} tableId={tableId} />
-                    {!tableClosed && (
-                        <>
-                            <EditOrderDialog order={order} tableId={tableId} />
-                            <RemoveOrderButton order={order} tableId={tableId} />
-                        </>
-                    )}
-                </div>
-            </div>
-            <span className={`tabular-nums text-sm shrink-0 pt-0.5 ${order.paid ? "line-through text-muted-foreground" : ""
-                }`}>
-                {order.unit_price > 0
-                    ? formatPrice(order.unit_price * order.quantity)
-                    : <span className="text-muted-foreground">—</span>}
-            </span>
-        </div>
     )
 }

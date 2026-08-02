@@ -78,17 +78,17 @@ function CreateUserDialog() {
             <DialogTrigger render={(props) => <Button {...props} size="sm">New user</Button>} />
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Create user</DialogTitle>
+                    <DialogTitle>Crea utente</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
                     <div className="grid grid-cols-2 gap-3">
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="name">Name</Label>
+                            <Label htmlFor="name">Nome</Label>
                             <Input id="name" {...register("name")} />
                             {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
                         </div>
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="surname">Surname</Label>
+                            <Label htmlFor="surname">Cognome</Label>
                             <Input id="surname" {...register("surname")} />
                             {errors.surname && <p className="text-xs text-destructive">{errors.surname.message}</p>}
                         </div>
@@ -99,7 +99,7 @@ function CreateUserDialog() {
                         {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
                     </div>
                     <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="phone">Phone (optional)</Label>
+                        <Label htmlFor="phone">Telefono (opzionale)</Label>
                         <Input id="phone" {...register("phone")} />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -108,7 +108,7 @@ function CreateUserDialog() {
                         {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
                     </div>
                     <div className="flex flex-col gap-1.5">
-                        <Label>Role</Label>
+                        <Label>Ruolo</Label>
                         <Select value={watch("role")} onValueChange={(v) => setValue("role", v as "admin" | "employee")}>
                             <SelectTrigger>
                                 <SelectValue />
@@ -156,10 +156,10 @@ function EditUserDialog({ user }: { user: User }) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger render={(props) => <Button {...props} variant="ghost" size="sm">Edit</Button>} />
+            <DialogTrigger render={(props) => <Button {...props} variant="ghost" size="sm">Modifica</Button>} />
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Edit user</DialogTitle>
+                    <DialogTitle>Modifica utente</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
                     <div className="grid grid-cols-2 gap-3">
@@ -225,17 +225,17 @@ function DeleteUserButton({ user }: { user: User }) {
             )} />
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Delete {user.name} {user.surname}?</AlertDialogTitle>
-                    <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                    <AlertDialogTitle>Elimina {user.name} {user.surname}?</AlertDialogTitle>
+                    <AlertDialogDescription>Questa azione non può essere annullata.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>Annulla</AlertDialogCancel>
                     <AlertDialogAction
                         onClick={handleDelete}
                         disabled={isPending}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                        Delete
+                        Elimina
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
@@ -264,7 +264,7 @@ export function UsersClient({ users }: { users: User[] }) {
                         {users.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                                    No users yet
+                                    Non ci sono ancora utenti.
                                 </TableCell>
                             </TableRow>
                         ) : (

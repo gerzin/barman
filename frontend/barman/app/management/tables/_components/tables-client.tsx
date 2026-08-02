@@ -30,6 +30,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { useAutoRefresh } from "@/lib/hooks/use-auto-refresh"
 
 const tableSchema = z.object({
     name: z.string().min(1, "Required"),
@@ -130,6 +131,8 @@ function DeleteTableButton({ table }: { table: Table }) {
 }
 
 export function TablesClient({ tables }: { tables: Table[] }) {
+    useAutoRefresh(true)
+
     const open = tables.filter((t) => !t.closed)
     const closed = tables.filter((t) => t.closed)
 

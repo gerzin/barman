@@ -2,6 +2,32 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/*
+  iOS Safari: base-ui portals (Select, Dialog) stay in the DOM during their
+  close animation. If animationend never fires on iOS, a transparent fixed
+  overlay remains and captures all touch events. Force pointer-events off
+  for any base-ui element in the "closing" state.
+*/
+[data-closed],
+[data-ending-style] {
+  pointer-events: none !important;
+}
+
+/* Remove grey tap flash and 300ms click delay on all interactive elements */
+button,
+a,
+input,
+select,
+textarea,
+[role="button"],
+[role="switch"],
+[role="option"],
+[role="combobox"],
+[role="listbox"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
