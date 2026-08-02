@@ -170,7 +170,7 @@ function AddOrderForm({
 }) {
     const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<AddOrderValues>({
         resolver: zodResolver(addOrderSchema),
-        defaultValues: { productId: "", productName: "", unitPrice: "", quantity: 1, note: "" },
+        defaultValues: { productId: CUSTOM_SENTINEL, productName: "", unitPrice: "", quantity: 1, note: "" },
     })
     const [isPending, startTransition] = useTransition()
     const productId = watch("productId")
@@ -210,7 +210,7 @@ function AddOrderForm({
             if (result?.error) toast.error(result.error)
             else {
                 toast.success("Order added")
-                reset({ productId: "", productName: "", unitPrice: "", quantity: 1, note: "" })
+                reset({ productId: CUSTOM_SENTINEL, productName: "", unitPrice: "", quantity: 1, note: "" })
             }
         })
     }
@@ -253,7 +253,7 @@ function AddOrderForm({
                 <div className="grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1.5 col-span-2">
                         <Label htmlFor="ao-name">Nome articolo</Label>
-                        <Input id="ao-name" placeholder="es. Cocktail speciale" {...register("productName")} />
+                        <Input id="ao-name" autoFocus placeholder="es. Cocktail speciale" {...register("productName")} />
                     </div>
                     <div className="flex flex-col gap-1.5 col-span-2">
                         <Label htmlFor="ao-price">Prezzo unitario (€) — opzionale</Label>
@@ -290,7 +290,7 @@ function AddOrderForm({
                 </div>
             </div>
 
-            <Button type="submit" disabled={isPending || !productId}>
+            <Button type="submit" className="min-h-11 text-base" disabled={isPending || !productId}>
                 {isPending ? "Aggiunta…" : "Aggiungi ordine"}
             </Button>
         </form>
@@ -327,7 +327,7 @@ function EditOrderDialog({ order, tableId }: { order: Order; tableId: string }) 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger render={(props) => (
-                <Button {...props} variant="ghost" size="sm" className="px-2 text-xs">
+                <Button {...props} variant="ghost" size="sm" className="min-h-11 whitespace-nowrap px-3 text-sm sm:min-h-7 sm:px-2 sm:text-xs">
                     Modifica
                 </Button>
             )} />
@@ -374,7 +374,7 @@ function RemoveOrderButton({ order, tableId }: { order: Order; tableId: string }
                     {...props}
                     variant="ghost"
                     size="sm"
-                    className="px-2 text-xs text-destructive hover:text-destructive"
+                    className="min-h-11 whitespace-nowrap px-3 text-sm text-destructive hover:text-destructive sm:min-h-7 sm:px-2 sm:text-xs"
                 >
                     Rimuovi
                 </Button>
@@ -450,7 +450,7 @@ function OrderRow({
                     <Button
                         variant="ghost"
                         size="sm"
-                        className={`px-2 text-xs ${optimisticPaid
+                        className={`min-h-11 shrink-0 whitespace-nowrap px-3 text-sm sm:min-h-7 sm:px-2 sm:text-xs ${optimisticPaid
                             ? "text-emerald-500 hover:text-emerald-400"
                             : "text-muted-foreground hover:text-foreground"
                             }`}
